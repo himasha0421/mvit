@@ -17,6 +17,9 @@ from mvit.datasets import loader
 from mvit.datasets.mixup import MixUp
 from mvit.models import build_model
 from mvit.utils.meters import EpochTimer, TrainMeter, ValMeter
+import torch
+from torch import tensor
+from sklearn.metrics import f1_score, accuracy_score, jaccard_score
 
 logger = logging.get_logger(__name__)
 
@@ -47,7 +50,9 @@ def train_epoch(
     model.train()
     train_meter.iter_tic()
     data_size = len(train_loader)
-
+    
+    epoch_acc = []
+    
     if cfg.MIXUP.ENABLE:
         mixup_fn = MixUp(
             mixup_alpha=cfg.MIXUP.ALPHA,
@@ -114,24 +119,36 @@ def train_epoch(
             labels = top_max_k_inds[:, 0]
 
         num_topks_correct = metrics.topks_correct(preds, labels, (1, 5))
+        
         top1_err, top5_err = [
             (1.0 - x / preds.size(0)) * 100.0 for x in num_topks_correct
         ]
+        
+        
+        top1_acc , top5_acc = [
+            ( x / preds.size(0) ) * 100.0 for x in num_topks_correct
+        ]
+        
         # Gather all the predictions across all the devices.
         if cfg.NUM_GPUS > 1:
             loss, top1_err, top5_err = du.all_reduce([loss, top1_err, top5_err])
-
+            
+        
         # Copy the stats from GPU to CPU (sync point).
-        loss, top1_err, top5_err = (
+        loss, top1_err, top5_err , top1_acc , top5_acc = (
             loss.item(),
             top1_err.item(),
             top5_err.item(),
+            top1_acc.item() , 
+            top5_acc.item()
         )
 
         # Update and log stats.
         train_meter.update_stats(
             top1_err,
             top5_err,
+            top1_acc ,
+            top5_acc ,
             loss,
             lr,
             inputs[0].size(0)
@@ -147,7 +164,6 @@ def train_epoch(
     # Log epoch stats.
     train_meter.log_epoch_stats(cur_epoch)
     train_meter.reset()
-
 
 @torch.no_grad()
 def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg):
@@ -176,10 +192,6 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg):
 
         preds = model(inputs)
 
-        # select first 1000 IN1K classes for evaluation for IN21k
-        if cfg.DATA.IN22k_VAL_IN1K != "":
-            preds = preds[:, :1000]
-
         # Compute the errors.
         num_topks_correct = metrics.topks_correct(preds, labels, (1, 5))
 
@@ -187,17 +199,24 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg):
         top1_err, top5_err = [
             (1.0 - x / preds.size(0)) * 100.0 for x in num_topks_correct
         ]
+        
+        top1_acc , top5_acc = [
+            ( x / preds.size(0) ) * 100.0 for x in num_topks_correct
+        ]
+        
         if cfg.NUM_GPUS > 1:
             top1_err, top5_err = du.all_reduce([top1_err, top5_err])
 
         # Copy the errors from GPU to CPU (sync point).
-        top1_err, top5_err = top1_err.item(), top5_err.item()
+        top1_err, top5_err , top1_acc , top5_acc = top1_err.item(), top5_err.item() , top1_acc.item() , top5_acc.item()
 
         val_meter.iter_toc()
         # Update and log stats.
         val_meter.update_stats(
             top1_err,
             top5_err,
+            top1_acc ,
+            top5_acc ,
             inputs[0].size(0)
             * max(
                 cfg.NUM_GPUS, 1
@@ -219,7 +238,7 @@ def train(cfg):
         cfg (CfgNode): configs. Details can be found in mvit/config/defaults.py
     """
     # Set up environment.
-    du.init_distributed_training(cfg)
+    #du.init_distributed_training(cfg)
     # Set random seed from configs.
     np.random.seed(cfg.RNG_SEED)
     torch.manual_seed(cfg.RNG_SEED)
@@ -248,7 +267,7 @@ def train(cfg):
 
     # Create the train and val loaders.
     train_loader = loader.construct_loader(cfg, "train")
-    val_loader = loader.construct_loader(cfg, "val")
+    val_loader = loader.construct_loader(cfg, "test")
 
     # Create meters.
     train_meter = TrainMeter(len(train_loader), cfg)

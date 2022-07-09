@@ -77,6 +77,7 @@ def get_logger(name):
     Args:
         name (string): name of the logger.
     """
+    logging.getLogger('PIL').setLevel(logging.WARNING)
     return logging.getLogger(name)
 
 

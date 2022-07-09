@@ -4,7 +4,7 @@ import json
 import os
 import random
 import re
-
+import pandas as pd
 import mvit.utils.logging as logging
 import torch
 import torch.utils.data
@@ -17,12 +17,12 @@ from .transform import transforms_imagenet_train
 
 logger = logging.get_logger(__name__)
 
-
 @DATASET_REGISTRY.register()
-class Imagenet(torch.utils.data.Dataset):
-    """ImageNet dataset."""
+class Charnet(torch.utils.data.Dataset):
+    """CharNet dataset."""
 
     def __init__(self, cfg, mode, num_retries=10):
+        
         self.num_retries = num_retries
         self.cfg = cfg
         self.mode = mode
@@ -31,44 +31,33 @@ class Imagenet(torch.utils.data.Dataset):
             "train",
             "val",
             "test",
-        ], "Split '{}' not supported for ImageNet".format(mode)
-        logger.info("Constructing ImageNet {}...".format(mode))
-        if cfg.DATA.PATH_TO_PRELOAD_IMDB == "":
-            self._construct_imdb()
-        else:
-            self._load_imdb()
+        ], "Split '{}' not supported for CharNet".format(mode)
+        logger.info("Constructing Charnet Dataset {}...".format(mode))
+        
+        self._construct_chardb()
 
-    def _load_imdb(self):
-        split_path = os.path.join(
-            self.cfg.DATA.PATH_TO_PRELOAD_IMDB,
-            f"{self.mode}.json" if self.mode != "test" else "val.json",
-        )
-        with pathmgr.open(split_path, "r") as f:
-            data = f.read()
-        self._imdb = json.loads(data)
-
-    def _construct_imdb(self):
-        """Constructs the imdb."""
-        # Compile the split data path
-        split_path = os.path.join(self.data_path, self.mode)
-        logger.info("{} data path: {}".format(self.mode, split_path))
-        # Images are stored per class in subdirs (format: n<number>)
-        split_files = pathmgr.ls(split_path)
-        self._class_ids = sorted(f for f in split_files if re.match(r"^n[0-9]+$", f))
-        # Map ImageNet class ids to contiguous ids
-        self._class_id_cont_id = {v: i for i, v in enumerate(self._class_ids)}
+    def _construct_chardb(self):
+        """Constructs the chardb."""
+        
+        #read the split csv file
+        split_path = os.path.join(self.data_path , f'{self.mode}_dataset.csv' )
+        logger.info("{} csv data path: {}".format(self.mode, split_path))
+        
+        # read the csv file
+        df_ = pd.read_csv( split_path )
+        n_classes = len(df_.label.value_counts())
         # Construct the image db
-        self._imdb = []
-        for class_id in self._class_ids:
-            cont_id = self._class_id_cont_id[class_id]
-            im_dir = os.path.join(split_path, class_id)
-            for im_name in pathmgr.ls(im_dir):
-                im_path = os.path.join(im_dir, im_name)
-                self._imdb.append({"im_path": im_path, "class": cont_id})
-        logger.info("Number of images: {}".format(len(self._imdb)))
-        logger.info("Number of classes: {}".format(len(self._class_ids)))
+        self._chardb = []
+        
+        for img_path , i_label in zip( df_.img_path.values , df_.label.values  ):
+            im_path = os.path.join( "dataset" , img_path )
+            self._chardb.append({"im_path": im_path, "class":  i_label })
+                
+        logger.info("Number of images: {}".format(len(self._chardb)))
+        logger.info("Number of classes: {}".format( n_classes ))
 
     def _prepare_im(self, im_path):
+        # read the image and coneert to rgb
         with pathmgr.open(im_path, "rb") as f:
             with Image.open(f) as im:
                 im = im.convert("RGB")
@@ -114,7 +103,7 @@ class Imagenet(torch.utils.data.Dataset):
     def __load__(self, index):
         try:
             # Load the image
-            im_path = self._imdb[index]["im_path"]
+            im_path = self._chardb[index]["im_path"]
             # Prepare the image for training / testing
             if self.mode == "train" and self.cfg.AUG.NUM_SAMPLE > 1:
                 im = []
@@ -136,15 +125,15 @@ class Imagenet(torch.utils.data.Dataset):
             im = self.__load__(index)
             # Data corrupted, retry with a different image.
             if im is None:
-                index = random.randint(0, len(self._imdb) - 1)
+                index = random.randint(0, len(self._chardb) - 1)
             else:
                 break
         # Retrieve the label
-        label = self._imdb[index]["class"]
+        label = self._chardb[index]["class"]
         if isinstance(im, list):
             label = [label for _ in range(len(im))]
 
         return im, label
 
     def __len__(self):
-        return len(self._imdb)
+        return len(self._chardb)

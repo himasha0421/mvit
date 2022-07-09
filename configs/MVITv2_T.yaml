@@ -8,7 +8,7 @@ MVIT:
   POOL_Q_STRIDE: [[0, 1, 1], [1, 2, 2], [2, 1, 1], [3, 2, 2], [4, 1, 1], [5, 1, 1], [6, 1, 1], [7, 1, 1], [8, 2, 2], [9, 1, 1]]
 SOLVER:
   BASE_LR_SCALE_NUM_SHARDS: True
-  BASE_LR: 0.00025
+  BASE_LR: 0.0125
   LR_POLICY: cosine
   MAX_EPOCH: 300
   WEIGHT_DECAY: 0.05

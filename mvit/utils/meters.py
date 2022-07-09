@@ -88,9 +88,13 @@ class TrainMeter(object):
         # Current minibatch errors (smoothed over a window).
         self.mb_top1_err = ScalarMeter(cfg.LOG_PERIOD)
         self.mb_top5_err = ScalarMeter(cfg.LOG_PERIOD)
+        self.mb_top1_acc = ScalarMeter(cfg.LOG_PERIOD)
+        self.mb_top5_acc = ScalarMeter(cfg.LOG_PERIOD)
         # Number of misclassified examples.
         self.num_top1_mis = 0
         self.num_top5_mis = 0
+        self.num_top1_acc = 0
+        self.num_top5_acc = 0
         self.num_samples = 0
         self.output_dir = cfg.OUTPUT_DIR
 
@@ -103,8 +107,12 @@ class TrainMeter(object):
         self.lr = None
         self.mb_top1_err.reset()
         self.mb_top5_err.reset()
+        self.mb_top1_acc.reset()
+        self.mb_top5_acc.reset()
         self.num_top1_mis = 0
         self.num_top5_mis = 0
+        self.num_top1_acc = 0
+        self.num_top5_acc = 0
         self.num_samples = 0
 
     def iter_tic(self):
@@ -125,7 +133,7 @@ class TrainMeter(object):
         self.data_timer.pause()
         self.net_timer.reset()
 
-    def update_stats(self, top1_err, top5_err, loss, lr, mb_size):
+    def update_stats(self, top1_err, top5_err,  top1_acc , top5_acc , loss, lr, mb_size):
         """
         Update the current stats.
         Args:
@@ -143,9 +151,13 @@ class TrainMeter(object):
         # Current minibatch stats
         self.mb_top1_err.add_value(top1_err)
         self.mb_top5_err.add_value(top5_err)
+        self.mb_top1_acc.add_value( top1_acc )
+        self.mb_top5_acc.add_value( top5_acc )
         # Aggregate stats
         self.num_top1_mis += top1_err * mb_size
         self.num_top5_mis += top5_err * mb_size
+        self.num_top1_acc += top1_acc * mb_size
+        self.num_top5_acc += top5_acc * mb_size
 
     def log_iter_stats(self, cur_epoch, cur_iter):
         """
@@ -174,6 +186,9 @@ class TrainMeter(object):
         }
         stats["top1_err"] = self.mb_top1_err.get_win_median()
         stats["top5_err"] = self.mb_top5_err.get_win_median()
+        stats["top1_acc"] = self.mb_top1_acc.get_win_median()
+        stats["top5_acc"] = self.mb_top5_acc.get_win_median()
+        
         logging.log_json_stats(stats)
 
     def log_epoch_stats(self, cur_epoch):
@@ -199,9 +214,14 @@ class TrainMeter(object):
         }
         top1_err = self.num_top1_mis / self.num_samples
         top5_err = self.num_top5_mis / self.num_samples
+        top1_acc = self.num_top1_acc / self.num_samples
+        top5_acc = self.num_top5_acc / self.num_samples
         avg_loss = self.loss_total / self.num_samples
+        
         stats["top1_err"] = top1_err
         stats["top5_err"] = top5_err
+        stats["top1_acc"] = top1_acc
+        stats["top5_acc"] = top5_acc
         stats["loss"] = avg_loss
         logging.log_json_stats(stats)
 
@@ -225,12 +245,18 @@ class ValMeter(object):
         # Current minibatch errors (smoothed over a window).
         self.mb_top1_err = ScalarMeter(cfg.LOG_PERIOD)
         self.mb_top5_err = ScalarMeter(cfg.LOG_PERIOD)
+        self.mb_top1_acc = ScalarMeter(cfg.LOG_PERIOD)
+        self.mb_top5_acc = ScalarMeter(cfg.LOG_PERIOD)
         # Min errors (over the full val set).
         self.min_top1_err = 100.0
         self.min_top5_err = 100.0
+        self.min_top1_acc = 0.0
+        self.min_top5_acc = 0.0
         # Number of misclassified examples.
         self.num_top1_mis = 0
         self.num_top5_mis = 0
+        self.num_top1_acc = 0
+        self.num_top5_acc = 0
         self.num_samples = 0
         self.all_preds = []
         self.all_labels = []
@@ -241,13 +267,17 @@ class ValMeter(object):
         Reset the Meter.
         """
         self.iter_timer.reset()
-        self.mb_top1_err.reset()
-        self.mb_top5_err.reset()
-        self.num_top1_mis = 0
-        self.num_top5_mis = 0
         self.num_samples = 0
         self.all_preds = []
         self.all_labels = []
+        self.mb_top1_err.reset()
+        self.mb_top5_err.reset()
+        self.mb_top1_acc.reset()
+        self.mb_top5_acc.reset()
+        self.num_top1_mis = 0
+        self.num_top5_mis = 0
+        self.num_top1_acc = 0
+        self.num_top5_acc = 0
 
     def iter_tic(self):
         """
@@ -267,7 +297,7 @@ class ValMeter(object):
         self.data_timer.pause()
         self.net_timer.reset()
 
-    def update_stats(self, top1_err, top5_err, mb_size):
+    def update_stats(self, top1_err, top5_err, top1_acc , top5_acc , mb_size):
         """
         Update the current stats.
         Args:
@@ -277,9 +307,16 @@ class ValMeter(object):
         """
         self.mb_top1_err.add_value(top1_err)
         self.mb_top5_err.add_value(top5_err)
+        self.mb_top1_acc.add_value( top1_acc )
+        self.mb_top5_acc.add_value( top5_acc )
+        # Aggregate stats
         self.num_top1_mis += top1_err * mb_size
         self.num_top5_mis += top5_err * mb_size
+        self.num_top1_acc += top1_acc * mb_size
+        self.num_top5_acc += top5_acc * mb_size
+        
         self.num_samples += mb_size
+         
 
     def update_predictions(self, preds, labels):
         """
@@ -313,6 +350,8 @@ class ValMeter(object):
         }
         stats["top1_err"] = self.mb_top1_err.get_win_median()
         stats["top5_err"] = self.mb_top5_err.get_win_median()
+        stats["top1_acc"] = self.mb_top1_acc.get_win_median()
+        stats["top5_acc"] = self.mb_top5_acc.get_win_median()
         logging.log_json_stats(stats)
 
     def log_epoch_stats(self, cur_epoch):
@@ -330,11 +369,16 @@ class ValMeter(object):
         }
         top1_err = self.num_top1_mis / self.num_samples
         top5_err = self.num_top5_mis / self.num_samples
+        top1_acc = self.num_top1_acc / self.num_samples
+        top5_acc = self.num_top5_acc / self.num_samples
+        
         self.min_top1_err = min(self.min_top1_err, top1_err)
         self.min_top5_err = min(self.min_top5_err, top5_err)
 
         stats["top1_err"] = top1_err
         stats["top5_err"] = top5_err
+        stats["top1_acc"] = top1_acc
+        stats["top5_acc"] = top5_acc
         stats["min_top1_err"] = self.min_top1_err
         stats["min_top5_err"] = self.min_top5_err
 

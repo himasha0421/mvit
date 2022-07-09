@@ -17,16 +17,16 @@ _C.TRAIN = CfgNode()
 _C.TRAIN.ENABLE = True
 
 # Dataset.
-_C.TRAIN.DATASET = "imagenet"
+_C.TRAIN.DATASET = "charnet"
 
 # Total mini-batch size.
-_C.TRAIN.BATCH_SIZE = 256
+_C.TRAIN.BATCH_SIZE = 24
 
 # Evaluate model on test data every eval period epochs.
-_C.TRAIN.EVAL_PERIOD = 10
+_C.TRAIN.EVAL_PERIOD = 2
 
 # Save model checkpoint every checkpoint period epochs.
-_C.TRAIN.CHECKPOINT_PERIOD = 10
+_C.TRAIN.CHECKPOINT_PERIOD = 5
 
 # Resume training from the latest checkpoint in the output directory.
 _C.TRAIN.AUTO_RESUME = True
@@ -48,7 +48,7 @@ _C.AUG = CfgNode()
 # Number of repeated augmentations to used during training.
 # If this is greater than 1, then the actual batch size is
 # TRAIN.BATCH_SIZE * AUG.NUM_SAMPLE.
-_C.AUG.NUM_SAMPLE = 1
+_C.AUG.NUM_SAMPLE = 2
 
 # Not used if using randaug.
 _C.AUG.COLOR_JITTER = 0.4
@@ -99,13 +99,13 @@ _C.MIXUP.LABEL_SMOOTH_VALUE = 0.1
 _C.TEST = CfgNode()
 
 # If True test the model, else skip the testing.
-_C.TEST.ENABLE = False
+_C.TEST.ENABLE = True
 
 # Dataset for testing.
-_C.TEST.DATASET = "imagenet"
+_C.TEST.DATASET = "charnet"
 
 # Total mini-batch size
-_C.TEST.BATCH_SIZE = 64
+_C.TEST.BATCH_SIZE = 16
 
 # Path to the checkpoint to load the initial weight.
 _C.TEST.CHECKPOINT_FILE_PATH = ""
@@ -122,14 +122,14 @@ _C.MODEL = CfgNode()
 _C.MODEL.MODEL_NAME = "MViT"
 
 # The number of classes to predict for the model.
-_C.MODEL.NUM_CLASSES = 1000
+_C.MODEL.NUM_CLASSES = 59
 
 # Loss function.
 _C.MODEL.LOSS_FUNC = "soft_cross_entropy"
 
 
 # Dropout rate before final projection in the backbone.
-_C.MODEL.DROPOUT_RATE = 0.0
+_C.MODEL.DROPOUT_RATE = 0.3
 
 # Activation layer for the output head.
 _C.MODEL.HEAD_ACT = "softmax"
@@ -227,7 +227,7 @@ _C.MVIT.DIM_MUL_IN_ATT = True
 _C.DATA = CfgNode()
 
 # The path to the data directory.
-_C.DATA.PATH_TO_DATA_DIR = "dataset/imagenet-mini"
+_C.DATA.PATH_TO_DATA_DIR = "dataset/Text-Classification"
 
 # If a imdb have been dumpped to a local file with the following format:
 # `{"im_path": im_path, "class": cont_id}`
@@ -262,13 +262,13 @@ _C.DATA.IN22k_VAL_IN1K = ""
 _C.SOLVER = CfgNode()
 
 # Base learning rate.
-_C.SOLVER.BASE_LR = 0.00025
+_C.SOLVER.BASE_LR = 0.00125
 
 # Learning rate policy (see utils/lr_policy.py for options and examples).
 _C.SOLVER.LR_POLICY = "cosine"
 
 # Final learning rates for 'cosine' policy.
-_C.SOLVER.COSINE_END_LR = 1e-6
+_C.SOLVER.COSINE_END_LR = 1e-4
 
 # Step size for 'exp' and 'cos' policies (in epochs).
 _C.SOLVER.STEP_SIZE = 1
@@ -301,7 +301,7 @@ _C.SOLVER.WARMUP_FACTOR = 0.1
 _C.SOLVER.WARMUP_EPOCHS = 70.0
 
 # The start learning rate of the warm up.
-_C.SOLVER.WARMUP_START_LR = 1e-8
+_C.SOLVER.WARMUP_START_LR = 1e-3
 
 # Optimization method.
 _C.SOLVER.OPTIMIZING_METHOD = "sgd"
@@ -332,7 +332,7 @@ _C.SOLVER.LAYER_DECAY = 1.0
 _C.NUM_GPUS = 0
 
 # Number of machine to use for the job.
-_C.NUM_SHARDS = 1
+_C.NUM_SHARDS = 0
 
 # The index of the current machine.
 _C.SHARD_ID = 0
@@ -360,10 +360,10 @@ _C.DIST_BACKEND = "nccl"
 _C.DATA_LOADER = CfgNode()
 
 # Number of data loader workers per training process.
-_C.DATA_LOADER.NUM_WORKERS = 8
+_C.DATA_LOADER.NUM_WORKERS = 1
 
 # Load data to pinned host memory.
-_C.DATA_LOADER.PIN_MEMORY = True
+_C.DATA_LOADER.PIN_MEMORY = False
 
 
 def assert_and_infer_cfg(cfg):
