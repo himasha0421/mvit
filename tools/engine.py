@@ -75,7 +75,7 @@ def train_epoch(
 
         # Update the learning rate.
         lr = optim.get_epoch_lr(cur_epoch + float(cur_iter) / data_size, cfg)
-        optim.set_lr(optimizer, lr)
+        #optim.set_lr(optimizer, lr)
 
         train_meter.data_toc()
 
@@ -118,7 +118,10 @@ def train_epoch(
             preds[idx_top1] += preds[idx_top2]
             preds[idx_top2] = 0.0
             labels = top_max_k_inds[:, 0]
-
+            
+        if not cfg.MIXUP.ENABLE:
+            labels = torch.argmax( labels , dim=-1 )
+            
         num_topks_correct = metrics.topks_correct(preds, labels, (1, 5))
         
         top1_err, top5_err = [
@@ -192,7 +195,8 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg):
         val_meter.data_toc()
 
         preds = model(inputs)
-
+        
+        labels = torch.argmax( labels , dim=-1 )
         # Compute the errors.
         num_topks_correct = metrics.topks_correct(preds, labels, (1, 5))
 

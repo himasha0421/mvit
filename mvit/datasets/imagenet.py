@@ -132,7 +132,9 @@ class Charnet(torch.utils.data.Dataset):
         label = self._chardb[index]["class"]
         if isinstance(im, list):
             label = [label for _ in range(len(im))]
-
+        # one-hot encode the labels
+        label = torch.nn.functional.one_hot( torch.tensor( label ) , num_classes=59 )
+        
         return im, label
 
     def __len__(self):

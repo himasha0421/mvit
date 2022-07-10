@@ -32,13 +32,13 @@ _C.TRAIN.CHECKPOINT_PERIOD = 5
 _C.TRAIN.AUTO_RESUME = True
 
 # Path to the checkpoint to load the initial weight.
-_C.TRAIN.CHECKPOINT_FILE_PATH = "models/MViTv2_T_in1k.pyth"
+_C.TRAIN.CHECKPOINT_FILE_PATH = ""
 
 # If True, reset epochs when loading checkpoint.
 _C.TRAIN.CHECKPOINT_EPOCH_RESET = True
 
 # If True, use FP16 for activations
-_C.TRAIN.MIXED_PRECISION = False
+_C.TRAIN.MIXED_PRECISION = True
 
 # ---------------------------------------------------------------------------- #
 # Augmentation options.
@@ -48,7 +48,7 @@ _C.AUG = CfgNode()
 # Number of repeated augmentations to used during training.
 # If this is greater than 1, then the actual batch size is
 # TRAIN.BATCH_SIZE * AUG.NUM_SAMPLE.
-_C.AUG.NUM_SAMPLE = 1
+_C.AUG.NUM_SAMPLE = 2
 
 # Not used if using randaug.
 _C.AUG.COLOR_JITTER = 0.4
@@ -60,7 +60,7 @@ _C.AUG.AA_TYPE = "rand-m9-n6-mstd0.5-inc1"
 _C.AUG.INTERPOLATION = "bicubic"
 
 # Probability of random erasing.
-_C.AUG.RE_PROB = 0.25
+_C.AUG.RE_PROB = 0.0
 
 # Random erasing mode.
 _C.AUG.RE_MODE = "pixel"
@@ -77,7 +77,7 @@ _C.AUG.RE_SPLIT = False
 _C.MIXUP = CfgNode()
 
 # Whether to use mixup.
-_C.MIXUP.ENABLE = True
+_C.MIXUP.ENABLE = False
 
 # Mixup alpha.
 _C.MIXUP.ALPHA = 0.8
@@ -242,10 +242,10 @@ _C.DATA.MEAN = [0.485, 0.456, 0.406]
 _C.DATA.STD = [0.229, 0.224, 0.225]
 
 # The spatial crop size for training.
-_C.DATA.TRAIN_CROP_SIZE = 224
+_C.DATA.TRAIN_CROP_SIZE = 128
 
 # The spatial crop size for testing.
-_C.DATA.TEST_CROP_SIZE = 224
+_C.DATA.TEST_CROP_SIZE = 128
 
 # Crop ratio for for testing. Default is 224/256.
 _C.DATA.VAL_CROP_RATIO = 0.0
@@ -262,13 +262,13 @@ _C.DATA.IN22k_VAL_IN1K = ""
 _C.SOLVER = CfgNode()
 
 # Base learning rate.
-_C.SOLVER.BASE_LR = 0.00025
+_C.SOLVER.BASE_LR = 0.00125
 
 # Learning rate policy (see utils/lr_policy.py for options and examples).
 _C.SOLVER.LR_POLICY = "cosine"
 
 # Final learning rates for 'cosine' policy.
-_C.SOLVER.COSINE_END_LR = 1e-6
+_C.SOLVER.COSINE_END_LR = 1e-4
 
 # Step size for 'exp' and 'cos' policies (in epochs).
 _C.SOLVER.STEP_SIZE = 1
@@ -301,7 +301,7 @@ _C.SOLVER.WARMUP_FACTOR = 0.1
 _C.SOLVER.WARMUP_EPOCHS = 70.0
 
 # The start learning rate of the warm up.
-_C.SOLVER.WARMUP_START_LR = 1e-8
+_C.SOLVER.WARMUP_START_LR = 1e-4
 
 # Optimization method.
 _C.SOLVER.OPTIMIZING_METHOD = "sgd"
@@ -332,7 +332,7 @@ _C.SOLVER.LAYER_DECAY = 1.0
 _C.NUM_GPUS = 0
 
 # Number of machine to use for the job.
-_C.NUM_SHARDS = 0
+_C.NUM_SHARDS = 1
 
 # The index of the current machine.
 _C.SHARD_ID = 0
@@ -363,7 +363,7 @@ _C.DATA_LOADER = CfgNode()
 _C.DATA_LOADER.NUM_WORKERS = 1
 
 # Load data to pinned host memory.
-_C.DATA_LOADER.PIN_MEMORY = False
+_C.DATA_LOADER.PIN_MEMORY = True
 
 
 def assert_and_infer_cfg(cfg):
