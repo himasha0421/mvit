@@ -32,10 +32,10 @@ _C.TRAIN.CHECKPOINT_PERIOD = 5
 _C.TRAIN.AUTO_RESUME = True
 
 # Path to the checkpoint to load the initial weight.
-_C.TRAIN.CHECKPOINT_FILE_PATH = ""
+_C.TRAIN.CHECKPOINT_FILE_PATH = "models/MViTv2_T_in1k.pyth"
 
 # If True, reset epochs when loading checkpoint.
-_C.TRAIN.CHECKPOINT_EPOCH_RESET = False
+_C.TRAIN.CHECKPOINT_EPOCH_RESET = True
 
 # If True, use FP16 for activations
 _C.TRAIN.MIXED_PRECISION = False
