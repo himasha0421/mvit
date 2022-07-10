@@ -64,6 +64,7 @@ def train_epoch(
         )
 
     for cur_iter, (inputs, labels) in enumerate(train_loader):
+
         # Transfer the data to the current GPU device.
         if cfg.NUM_GPUS:
             inputs = inputs.cuda(non_blocking=True)

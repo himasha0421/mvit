@@ -48,7 +48,7 @@ _C.AUG = CfgNode()
 # Number of repeated augmentations to used during training.
 # If this is greater than 1, then the actual batch size is
 # TRAIN.BATCH_SIZE * AUG.NUM_SAMPLE.
-_C.AUG.NUM_SAMPLE = 2
+_C.AUG.NUM_SAMPLE = 1
 
 # Not used if using randaug.
 _C.AUG.COLOR_JITTER = 0.4
@@ -248,7 +248,7 @@ _C.DATA.TRAIN_CROP_SIZE = 224
 _C.DATA.TEST_CROP_SIZE = 224
 
 # Crop ratio for for testing. Default is 224/256.
-_C.DATA.VAL_CROP_RATIO = 0.875
+_C.DATA.VAL_CROP_RATIO = 0.0
 
 # If combine train/val split as training for in21k
 _C.DATA.IN22K_TRAINVAL = False
@@ -262,13 +262,13 @@ _C.DATA.IN22k_VAL_IN1K = ""
 _C.SOLVER = CfgNode()
 
 # Base learning rate.
-_C.SOLVER.BASE_LR = 0.00125
+_C.SOLVER.BASE_LR = 0.00025
 
 # Learning rate policy (see utils/lr_policy.py for options and examples).
 _C.SOLVER.LR_POLICY = "cosine"
 
 # Final learning rates for 'cosine' policy.
-_C.SOLVER.COSINE_END_LR = 1e-4
+_C.SOLVER.COSINE_END_LR = 1e-6
 
 # Step size for 'exp' and 'cos' policies (in epochs).
 _C.SOLVER.STEP_SIZE = 1
@@ -301,7 +301,7 @@ _C.SOLVER.WARMUP_FACTOR = 0.1
 _C.SOLVER.WARMUP_EPOCHS = 70.0
 
 # The start learning rate of the warm up.
-_C.SOLVER.WARMUP_START_LR = 1e-3
+_C.SOLVER.WARMUP_START_LR = 1e-8
 
 # Optimization method.
 _C.SOLVER.OPTIMIZING_METHOD = "sgd"
