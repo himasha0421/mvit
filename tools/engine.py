@@ -20,8 +20,21 @@ from mvit.utils.meters import EpochTimer, TrainMeter, ValMeter
 import torch
 from torch import tensor
 from sklearn.metrics import f1_score, accuracy_score, jaccard_score
+import os
+import joblib
+import pandas as pd
 
 logger = logging.get_logger(__name__)
+
+# define the target label dictionary
+target_2_idx = joblib.load( "dataset/target_label.dict" )
+idx_2_target = { idx : key  for key , idx in target_2_idx.items() }
+    
+def create_folder( path ):
+    try: 
+        os.mkdir(path) 
+    except OSError as error: 
+        print(error)  
 
 
 def train_epoch(
@@ -185,6 +198,14 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg):
     # Evaluation mode enabled. The running stats would not be updated.
     model.eval()
     val_meter.iter_tic()
+    
+    #  for every evaluation step create sperate folder and save predictions into csv
+    eval_dir = os.path.join( "predictions/eval_{}".format( cur_epoch ) )
+    create_folder( eval_dir )
+    
+    # place holder to keep the results
+    pred_results = []
+    
 
     for cur_iter, (inputs, labels) in enumerate(val_loader):
         if cfg.NUM_GPUS:
@@ -230,11 +251,28 @@ def eval_epoch(val_loader, model, val_meter, cur_epoch, cfg):
         val_meter.update_predictions(preds, labels)
         val_meter.log_iter_stats(cur_epoch, cur_iter)
         val_meter.iter_tic()
+        
+        
+        # generate prediction outputs
+        pred_max = torch.argmax( preds , dim=-1 ).detach().cpu().numpy()
+        labels = labels.detach().cpu().numpy()
+        
+        for i_pred , i_gt in zip( pred_max , labels ):
+            i_sample ={
+                'prediction': idx_2_target[i_pred] ,
+                "gt": idx_2_target[i_gt]
+            }
+            
+            pred_results.append( i_sample )
 
     # Log epoch stats.
     val_meter.log_epoch_stats(cur_epoch)
     val_meter.reset()
-
+    
+    # create a dataframe
+    df_preds= pd.DataFrame( pred_results )
+    # save the csv 
+    df_preds.to_csv( os.path.join( eval_dir , "predictions.csv" ) , index=False )
 
 def train(cfg):
     """
@@ -280,6 +318,10 @@ def train(cfg):
 
     # Perform the training loop.
     logger.info("Start epoch: {}".format(start_epoch + 1))
+    
+    # create folder to save evaluations
+    eval_dir = os.path.join( "predictions" )
+    create_folder( eval_dir )
 
     epoch_timer = EpochTimer()
     for cur_epoch in range(start_epoch, cfg.SOLVER.MAX_EPOCH):
@@ -330,6 +372,8 @@ def train(cfg):
         # Evaluate the model on validation set.
         if is_eval_epoch:
             eval_epoch(val_loader, model, val_meter, cur_epoch, cfg)
+            
+    
 
 
 def test(cfg):

@@ -23,7 +23,7 @@ _C.TRAIN.DATASET = "charnet"
 _C.TRAIN.BATCH_SIZE = 24
 
 # Evaluate model on test data every eval period epochs.
-_C.TRAIN.EVAL_PERIOD = 2
+_C.TRAIN.EVAL_PERIOD = 1
 
 # Save model checkpoint every checkpoint period epochs.
 _C.TRAIN.CHECKPOINT_PERIOD = 5
@@ -48,7 +48,7 @@ _C.AUG = CfgNode()
 # Number of repeated augmentations to used during training.
 # If this is greater than 1, then the actual batch size is
 # TRAIN.BATCH_SIZE * AUG.NUM_SAMPLE.
-_C.AUG.NUM_SAMPLE = 2
+_C.AUG.NUM_SAMPLE = 1
 
 # Not used if using randaug.
 _C.AUG.COLOR_JITTER = 0.4
@@ -301,7 +301,7 @@ _C.SOLVER.WARMUP_FACTOR = 0.1
 _C.SOLVER.WARMUP_EPOCHS = 70.0
 
 # The start learning rate of the warm up.
-_C.SOLVER.WARMUP_START_LR = 1e-4
+_C.SOLVER.WARMUP_START_LR = 1e-3
 
 # Optimization method.
 _C.SOLVER.OPTIMIZING_METHOD = "sgd"
